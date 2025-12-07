@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HueSearch | 設計師的靈感色系探索</title>
+    <meta name="description" content="透過顏色搜尋靈感圖片，設計師專用的 Mood Board 工具">
+
+    <style>
+        /* CSS:BASE-START */
+        /* 全站基礎樣式、字型、背景、container */
+        :root {
+            --bg-body: #F5F5F7;
+            --bg-card: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-sub: #86868B;
+            --accent-color: #007AFF;
+            --border-radius: 12px;
+            --gap-md: 24px;
+            --gap-sm: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            outline: none;
+            font-family: inherit;
+        }
+        /* CSS:BASE-END */
+
+        /* CSS:HEADER-START */
+        /* 工具標題列 */
+        .header {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 16px 0;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-dot {
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #FF3B30, #FF9500, #FFCC00, #4CD964, #5AC8FA, #007AFF, #5856D6, #FF2D55);
+            border-radius: 50%;
+        }
+
+        .header-tagline {
+            font-size: 0.875rem;
+            color: var(--text-sub);
+            display: none; /* Mobile hidden */
+        }
+        /* CSS:HEADER-END */
+
+        /* CSS:SEARCH-START */
+        /* 顏色搜尋操作區 */
+        .section-search {
+            padding: 60px 0 40px;
+            text-align: center;
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .search-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .search-desc {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* 自定義顏色選擇器外觀 */
+        .color-wrapper {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 4px solid white;
+            transition: transform 0.2s;
+        }
+
+        .color-wrapper:hover {
+            transform: scale(1.05);
+        }
+
+        .input-color {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+            background: none;
+        }
+
+        .btn-search {
+            background-color: var(--text-main);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            min-width: 160px;
+        }
+
+        .btn-search:hover {
+            background-color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-search:active {
+            transform: translateY(0);
+        }
+
+        .btn-search:disabled {
+            background-color: #E5E5EA;
+            color: #AEAEB2;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .selected-hex {
+            font-family: monospace;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            margin-top: 8px;
+            background: #F2F2F7;
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
+        /* CSS:SEARCH-END */
+
+        /* CSS:RESULT-START */
+        /* 圖片 grid / card */
+        .section-result {
+            flex: 1;
+            padding: 20px 0 60px;
+            min-height: 400px;
+        }
+
+        .status-message {
+            text-align: center;
+            color: var(--text-sub);
+            padding: 40px;
+            font-size: 1rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--gap-md);
+        }
+
+        .image-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            transition: var(--transition);
+            position: relative;
+            /* 保持一定的長寬比，避免破圖 */
+            aspect-ratio: 3/4; 
+            cursor: zoom-in;
+        }
+
+        .image-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .image-card img.loaded {
+            opacity: 1;
+        }
+
+        /* 圖片載入前的骨架屏效果 */
+        .image-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #E5E5EA;
+            z-index: -1;
+        }
+        /* CSS:RESULT-END */
+
+        /* CSS:INFO-START */
+        /* 說明區 */
+        .section-info {
+            background-color: white;
+            padding: 40px 0;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            margin-top: auto;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 12px;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+        }
+
+        .beta-badge {
+            background: #F2F2F7;
+            color: var(--text-main);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        /* CSS:INFO-END */
+
+        /* CSS:RWD-START */
+        /* media query */
+        @media (min-width: 768px) {
+            .header-tagline {
+                display: block;
+            }
+            
+            .section-search {
+                padding: 80px 0 60px;
+            }
+
+            .search-container {
+                padding: 48px;
+            }
+
+            .control-group {
+                flex-direction: row;
+            }
+        }
+
+        @media (min-width: 1440px) {
+            .container {
+                max-width: 1400px;
+            }
+        }
+        /* CSS:RWD-END */
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <header class="header">
+            <div class="container header-content">
+                <a href="#" class="logo">
+                    <span class="logo-dot"></span>
+                    HueSearch
+                </a>
+                <span class="header-tagline">視覺設計師的色彩靈感庫</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- SECTION:SEARCH-START -->
+            <section class="section section-search">
+                <div class="container">
+                    <div class="search-container">
+                        <h1 class="search-title">尋找你的色彩靈感</h1>
+                        <p class="search-desc">選擇一個主色調，探索與其共鳴的視覺圖像 (MVP Prototype)</p>
+                        
+                        <div class="control-group">
+                            <div class="color-wrapper" title="點擊選擇顏色">
+                                <input type="color" class="input-color" value="#007AFF" aria-label="選擇顏色">
+                            </div>
+                            <button class="btn-search">開始搜尋</button>
+                        </div>
+                        <div class="selected-hex">#007AFF</div>
+                    </div>
+                </div>
+            </section>
+            <!-- SECTION:SEARCH-END -->
+
+            <!-- SECTION:RESULT-START -->
+            <section class="section section-result">
+                <div class="container">
+                    <!-- JS 將會把內容渲染在這裡 -->
+                    <div class="result-container">
+                        <div class="status-message">
+                            請選擇顏色並點擊搜尋
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- SECTION:RESULT-END -->
+        </main>
+
+        <!-- SECTION:INFO-START -->
+        <section class="section section-info">
+            <div class="container footer-content">
+                <p>HueSearch MVP &copy; 2025</p>
+                <span class="beta-badge">Phase 1 Beta</span>
+                <p>目前版本使用模擬資料展示流程，圖片來源：Unsplash</p>
+            </div>
+        </section>
+        <!-- SECTION:INFO-END -->
+    </div>
+
+    <script>
+        // JS:STATE
+        const state = {
+            currentColors: ['#007AFF'], // 升級為陣列，支援多色擴充
+            page: 1,                    // 當前頁碼
+            totalPages: 0,              // 總頁數 (從 API 取得)
+            isLoading: false,
+            results: []                 // 儲存所有已載入的圖片
+        };
+
+        // API CONFIG
+        const UNSPLASH_ACCESS_KEY = 'fsUktF3Av-cX74ni5vwalNSLzczk7GTR_ECP9ifHVas'; // ⚠️ 請確保填入 Key
+        const UNSPLASH_API_URL = 'https://api.unsplash.com/search/photos';
+
+        // DOM Elements
+        const colorInput = document.querySelector('.input-color');
+        const searchBtn = document.querySelector('.btn-search');
+        const hexDisplay = document.querySelector('.selected-hex');
+        const resultContainer = document.querySelector('.result-container');
+        const colorWrapper = document.querySelector('.color-wrapper');
+        
+        // Phase 3 新增 DOM (將由 initPhase3 動態生成)
+        let loadMoreBtn = null;
+        let modalOverlay = null;
+
+        // 初始化 Phase 3 功能 (注入樣式與額外 DOM)
+        initPhase3();
+
+        function initPhase3() {
+            // 1. 注入 CSS
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 動態注入的 Phase 3 樣式 */
+                .btn-load-more {
+                    display: none; /* 預設隱藏 */
+                    margin: 32px auto;
+                    padding: 12px 40px;
+                    background: transparent;
+                    border: 2px solid var(--text-main);
+                    color: var(--text-main);
+                    border-radius: 50px;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                }
+                .btn-load-more:hover {
+                    background: var(--text-main);
+                    color: white;
+                }
+                
+                /* Modal 樣式 */
+                .modal-overlay {
+                    position: fixed;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0, 0, 0, 0.85);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: opacity 0.3s ease;
+                    backdrop-filter: blur(5px);
+                }
+                .modal-overlay.active {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+                .modal-content {
+                    max-width: 90vw;
+                    max-height: 90vh;
+                    display: flex;
+                    flex-direction: column;
+                    background: transparent;
+                    position: relative;
+                }
+                .modal-image {
+                    max-width: 100%;
+                    max-height: 80vh;
+                    object-fit: contain;
+                    border-radius: 4px;
+                    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+                }
+                .modal-info {
+                    margin-top: 16px;
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+                .author-avatar {
+                    width: 40px; height: 40px; border-radius: 50%; border: 2px solid white;
+                }
+                .author-name { font-weight: 600; font-size: 1.1rem; }
+                .image-color-tag {
+                    margin-left: auto;
+                    padding: 4px 12px;
+                    background: rgba(255,255,255,0.2);
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                    font-family: monospace;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 2. 注入 Load More 按鈕 (在 section-result 內)
+            loadMoreBtn = document.createElement('button');
+            loadMoreBtn.className = 'btn-load-more';
+            loadMoreBtn.textContent = '載入更多圖片';
+            loadMoreBtn.addEventListener('click', () => handleSearch(true)); // Pass true for loadMore
+            // 插入到 resultContainer 之後，但仍在 section-result 內
+            resultContainer.parentNode.insertBefore(loadMoreBtn, resultContainer.nextSibling);
+
+            // 3. 注入 Modal 結構
+            modalOverlay = document.createElement('div');
+            modalOverlay.className = 'modal-overlay';
+            modalOverlay.innerHTML = `
+                <div class="modal-content">
+                    <img class="modal-image" src="" alt="">
+                    <div class="modal-info">
+                        <!-- JS 填充 -->
+                    </div>
+                </div>
+            `;
+            // 點擊背景關閉
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) closeModal();
+            });
+            document.body.appendChild(modalOverlay);
+        }
+
+        // JS:RENDER
+        
+        function renderLoading(isLoadMore) {
+            if (!isLoadMore) {
+                // 如果是新搜尋，清空並顯示大 Loading
+                resultContainer.innerHTML = `
+                    <div class="status-message">
+                        <div class="spinner"></div>
+                        <p>正在分析色譜...</p>
+                    </div>
+                `;
+                loadMoreBtn.style.display = 'none';
+            } else {
+                // 如果是載入更多，按鈕顯示 loading
+                loadMoreBtn.textContent = '載入中...';
+                loadMoreBtn.disabled = true;
+            }
+            searchBtn.disabled = true;
+        }
+
+        function renderEmpty(message = '找不到相關圖片') {
+            resultContainer.innerHTML = `<div class="status-message">${message}</div>`;
+            loadMoreBtn.style.display = 'none';
+            resetButton();
+        }
+
+        /**
+         * 渲染圖片列表
+         * @param {Array} images 
+         * @param {Boolean} isAppend - 是否為追加模式
+         */
+        function renderImages(images, isAppend = false) {
+            if (!images || images.length === 0) {
+                if (!isAppend) renderEmpty();
+                return;
+            }
+
+            // 決定容器：如果是追加，直接用現有的 .image-grid；如果是新搜尋，建立新的
+            let grid = isAppend ? document.querySelector('.image-grid') : null;
+            
+            if (!grid) {
+                grid = document.createElement('div');
+                grid.className = 'image-grid';
+                resultContainer.innerHTML = ''; // 清空舊訊息
+                resultContainer.appendChild(grid);
+            }
+
+            images.forEach((imgData, index) => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                const img = document.createElement('img');
+                img.alt = imgData.alt;
+                img.loading = 'lazy';
+                
+                img.onload = () => img.classList.add('loaded');
+                img.src = imgData.url;
+
+                // Phase 3: 點擊開啟 Modal
+                card.addEventListener('click', () => openModal(imgData));
+
+                card.appendChild(img);
+                grid.appendChild(card);
+            });
+
+            // 控制 Load More 按鈕顯示
+            if (state.page < state.totalPages) {
+                loadMoreBtn.style.display = 'block';
+                loadMoreBtn.textContent = '載入更多圖片';
+                loadMoreBtn.disabled = false;
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
+            
+            resetButton();
+        }
+
+        function resetButton() {
+            searchBtn.disabled = false;
+            searchBtn.textContent = '開始搜尋';
+        }
+
+        // Phase 3 Modal Functions
+        function openModal(imgData) {
+            const img = modalOverlay.querySelector('.modal-image');
+            const info = modalOverlay.querySelector('.modal-info');
+            
+            img.src = imgData.urlRegular; // 使用較大尺寸
+            
+            // 處理可選的作者資訊
+            const authorHtml = imgData.author ? `
+                <img class="author-avatar" src="${imgData.avatar}" alt="${imgData.author}">
+                <div class="author-name">
+                    <span>${imgData.author}</span>
+                </div>
+            ` : '';
+
+            // 顯示 API 回傳的顏色 (如果有)
+            const colorHtml = imgData.color ? `<div class="image-color-tag" style="background:${imgData.color}; color:${getContrastYIQ(imgData.color)}">${imgData.color}</div>` : '';
+
+            info.innerHTML = authorHtml + colorHtml;
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        // 輔助：計算文字顏色對比
+        function getContrastYIQ(hexcolor){
+            hexcolor = hexcolor.replace("#", "");
+            var r = parseInt(hexcolor.substr(0,2),16);
+            var g = parseInt(hexcolor.substr(2,2),16);
+            var b = parseInt(hexcolor.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? 'black' : 'white';
+        }
+
+
+        // JS:EVENT
+        colorInput.addEventListener('input', (e) => {
+            // 更新狀態陣列的第一個顏色
+            state.currentColors[0] = e.target.value;
+            hexDisplay.textContent = state.currentColors[0].toUpperCase();
+            colorWrapper.style.boxShadow = `0 4px 20px ${state.currentColors[0]}40`;
+        });
+
+        searchBtn.addEventListener('click', () => {
+            // 新搜尋：重置頁碼
+            state.page = 1;
+            state.results = []; 
+            handleSearch(false);
+        });
+
+        /**
+         * 核心搜尋邏輯 (Phase 3 升級版 + 智慧明暗偵測)
+         * @param {Boolean} isLoadMore - 是否為載入更多模式
+         */
+        async function handleSearch(isLoadMore = false) {
+            if (state.isLoading) return;
+            
+            state.isLoading = true;
+            renderLoading(isLoadMore);
+
+            // 若為 Load More，頁碼 +1，否則維持 1
+            if (isLoadMore) state.page += 1;
+
+            try {
+                // 取主要搜尋顏色
+                const primaryColorHex = state.currentColors[0];
+                const unsplashColor = getUnsplashColorName(primaryColorHex);
+                
+                // NEW: 產生更精確的搜尋關鍵字 (包含明暗/飽和度描述)
+                const searchQuery = getSmartQuery(primaryColorHex, unsplashColor);
+
+                console.log(`Fetching page ${state.page} for query: "${searchQuery}" (Filter: ${unsplashColor})`);
+
+                // 呼叫 API (傳入新的 searchQuery)
+                const data = await fetchImagesByColor(unsplashColor, state.page, searchQuery);
+                
+                // 更新總頁數狀態
+                state.totalPages = data.total_pages;
+
+                // 處理資料並儲存
+                state.results = isLoadMore ? [...state.results, ...data.images] : data.images;
+                
+                state.isLoading = false;
+                renderImages(data.images, isLoadMore);
+
+            } catch (error) {
+                console.error('API Error:', error);
+                state.isLoading = false;
+                // 若是 Load More 失敗，不應該清空整個畫面，而是提示錯誤
+                if (isLoadMore) {
+                    loadMoreBtn.textContent = '載入失敗，請重試';
+                    loadMoreBtn.disabled = false;
+                    state.page -= 1; // 回滾頁碼
+                } else {
+                    renderEmpty('連線發生錯誤，請檢查 API Key 或網路。');
+                }
+            }
+        }
+
+        /**
+         * API 呼叫 (Phase 3: 支援分頁 + 智慧關鍵字)
+         */
+        async function fetchImagesByColor(colorName, page, searchQuery) {
+            const url = new URL(UNSPLASH_API_URL);
+            url.searchParams.append('client_id', UNSPLASH_ACCESS_KEY);
+            url.searchParams.append('query', searchQuery); // 使用智慧關鍵字
+            url.searchParams.append('color', colorName);
+            url.searchParams.append('per_page', '12');
+            url.searchParams.append('page', page.toString());
+            url.searchParams.append('orientation', 'portrait');
+
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Unsplash API ${response.status}`);
+            
+            const data = await response.json();
+
+            return {
+                total_pages: data.total_pages,
+                images: (data.results || []).map(img => ({
+                    id: img.id,
+                    url: img.urls.small,         // 列表用小圖
+                    urlRegular: img.urls.regular, // Modal 用大圖
+                    alt: img.alt_description || 'Unsplash Image',
+                    color: img.color,            // API 回傳的主要顏色
+                    author: img.user.name,
+                    avatar: img.user.profile_image.medium
+                }))
+            };
+        }
+
+        /**
+         * 根據 Hex 的 HSL 數值，產生更精準的搜尋關鍵字
+         * 解決 API color 參數無法區分深淺的問題
+         */
+        function getSmartQuery(hex, baseColorName) {
+            const { s, l } = hexToHSL(hex);
+            let keywords = [];
+
+            // 1. 根據亮度 (Lightness) 加入形容詞
+            if (l < 30) {
+                keywords.push('dark', 'moody'); // 深色、情緒化
+            } else if (l > 70) {
+                keywords.push('light', 'pastel', 'bright'); // 淺色、粉嫩
+            }
+            
+            // 2. 根據飽和度 (Saturation) 加入形容詞
+            if (s < 20) {
+                keywords.push('minimal', 'neutral', 'grey'); // 低飽和、極簡
+            } else if (s > 80) {
+                keywords.push('neon', 'vibrant', 'saturated'); // 高飽和、鮮豔
+            }
+
+            // 3. 加入基礎字詞
+            // 如果判定為黑/白，則不需要再加上顏色名稱，以免干擾
+            if (baseColorName !== 'black' && baseColorName !== 'white') {
+                keywords.push(baseColorName);
+            }
+            keywords.push('texture'); // 保持設計素材導向
+            
+            // 組合結果 e.g., "dark moody blue texture" 或 "pastel blue texture"
+            return keywords.join(' ');
+        }
+
+        // 輔助：Hex 轉 HSL (用於判斷明暗與飽和度)
+        function hexToHSL(hex) {
+            hex = hex.replace('#', '');
+            let r = parseInt(hex.substring(0, 2), 16) / 255;
+            let g = parseInt(hex.substring(2, 4), 16) / 255;
+            let b = parseInt(hex.substring(4, 6), 16) / 255;
+
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h *= 60;
+            }
+
+            return { h, s: s * 100, l: l * 100 };
+        }
+
+        // Unsplash 顏色映射 (保持不變)
+        function getUnsplashColorName(hex) {
+            hex = hex.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            if (max < 30) return 'black';
+            if (min > 225) return 'white';
+
+            let h, s, l = (max + min) / 2;
+            const d = max - min;
+            if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+            else if (max === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+            h *= 60;
+
+            if (h >= 330 || h < 15) return 'red';
+            if (h >= 15 && h < 45) return 'orange';
+            if (h >= 45 && h < 70) return 'yellow';
+            if (h >= 70 && h < 160) return 'green';
+            if (h >= 160 && h < 200) return 'teal';
+            if (h >= 200 && h < 260) return 'blue';
+            if (h >= 260 && h < 290) return 'purple';
+            if (h >= 290 && h < 330) return 'magenta';
+            return 'blue';
+        }
+    </script>
+</body>
+</html>
