@@ -283,6 +283,45 @@
             background: #E5E5EA;
             z-index: -1;
         }
+
+        /* 下載按鈕樣式 */
+        .download-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 5;
+            border: none;
+            color: #1D1D1F;
+        }
+
+        .image-card:hover .download-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .download-btn:hover {
+            transform: scale(1.1);
+            background: #FFFFFF;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .download-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
         /* CSS:RESULT-END */
 
         /* CSS:INFO-START */
@@ -588,10 +627,26 @@
                 img.onload = () => img.classList.add('loaded');
                 img.src = imgData.url;
 
+                // Download Button
+                const btnDownload = document.createElement('button');
+                btnDownload.className = 'download-btn';
+                btnDownload.title = '下載圖片';
+                btnDownload.innerHTML = `
+                    <svg viewBox="0 0 24 24">
+                        <path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/>
+                    </svg>
+                `;
+                
+                btnDownload.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止冒泡觸發 Modal
+                    handleDownload(imgData.urlRegular, `huesearch-${imgData.id}.jpg`, e);
+                });
+
                 // Phase 3: 點擊開啟 Modal
                 card.addEventListener('click', () => openModal(imgData));
 
                 card.appendChild(img);
+                card.appendChild(btnDownload);
                 grid.appendChild(card);
             });
 
@@ -610,6 +665,41 @@
         function resetButton() {
             searchBtn.disabled = false;
             searchBtn.textContent = '開始搜尋';
+        }
+
+        /**
+         * 處理圖片下載
+         * @param {string} url - 圖片網址
+         * @param {string} filename - 儲存檔名
+         * @param {Event} event - 點擊事件
+         */
+        async function handleDownload(url, filename, event) {
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            
+            try {
+                // Loading state
+                btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;"></div>`;
+                
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+                
+                // Success feedback
+                btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+                setTimeout(() => btn.innerHTML = originalHtml, 2000);
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('下載失敗，請嘗試右鍵另存新檔');
+                btn.innerHTML = originalHtml;
+            }
         }
 
         // Phase 3 Modal Functions
